@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Paper">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="탭 한 번으로는 어떤 도구도 나타나지 않는 iPad용 전체화면 PDF 뷰어">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>Paper · PDF Only</title>
+<style>
+:root{color-scheme:light;--ink:#161a20;--bg:#fff;--panel:#181b21;--accent:#c6d2f2;--z:1}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;height:100dvh;overflow:hidden;background:var(--bg);-webkit-text-size-adjust:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}
+button{font:inherit}
+#scroller{position:fixed;inset:0;background:white;overflow-y:auto;overflow-x:hidden;overscroll-behavior-x:none;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-width:none}
+#scroller::-webkit-scrollbar{display:none}
+#pages{width:100%;margin:0;padding:0;overflow:hidden;position:relative}
+.sheet{position:relative;display:block;width:100%;margin:0;padding:0;overflow:hidden;background:white;contain:layout paint;}
+.sheet canvas{position:absolute;top:0;left:50%;transform:translateX(-50%);display:block;max-width:none;pointer-events:none}
+#toolbar{position:fixed;z-index:50;top:calc(env(safe-area-inset-top,0px) + 12px);left:50%;transform:translateX(-50%);width:min(95vw,680px);min-height:54px;padding:6px 9px;display:flex;align-items:center;gap:5px;border-radius:18px;background:rgba(19,21,27,.93);color:white;box-shadow:0 8px 32px rgba(0,0,0,.18);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);transition:opacity .16s ease,transform .16s ease;touch-action:manipulation;}
+#toolbar.hidden{opacity:0;pointer-events:none;visibility:hidden;transform:translate(-50%,-7px)}
+#toolbar button{width:43px;height:43px;display:grid;place-items:center;flex:none;cursor:pointer;background:none;color:inherit;border:0;border-radius:12px;touch-action:manipulation}
+#toolbar button:hover,#toolbar button:focus-visible{background:rgba(255,255,255,.12);outline:none}
+#toolbar svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#fileLabel{flex:1;min-width:0;color:#e5e7ed;font-size:13px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px}
+#fileLabel small{display:block;font-size:11px;color:#9298a6;margin-top:2px}
+#zoomLabel{min-width:35px;font-size:12px;color:#d1d4dc;text-align:center;flex:none}
+#start{position:fixed;z-index:10;inset:0;background:radial-gradient(circle at 50% 28%,#f0f2f5,#fff 63%);display:flex;align-items:center;justify-content:center;overflow:auto}
+#start.hidden{display:none}
+.welcome{width:min(90vw,390px);padding:25px 10px;display:grid;justify-items:center;text-align:center;gap:13px;color:var(--ink)}
+.logo{width:74px;height:94px;border-radius:12px;background:#e9ecf1;display:grid;place-items:center;box-shadow:0 13px 25px rgba(40,45,56,.1)}
+.logo svg{width:43px;height:53px;stroke:#394355;stroke-width:1.3;fill:none}
+.welcome h1{font-weight:620;letter-spacing:-.06em;font-size:35px;margin:8px 0 0}
+.welcome p{font-size:14px;line-height:1.8;color:#707784;margin:0}
+.primary{background:#161c28!important;color:#fff!important;border-radius:15px;border:0;min-height:52px;padding:0 24px;font-weight:600;cursor:pointer}
+.foot{font-size:12px;color:#8d939d;line-height:1.8}
+#loading{position:fixed;z-index:32;top:50%;left:50%;transform:translate(-50%,-50%);padding:13px 18px;border-radius:14px;background:rgba(21,24,29,.9);color:white;font-size:13px;pointer-events:none;max-width:90vw;text-align:center;line-height:1.5}
+#loading.hidden{display:none}
+#libraryOverlay{position:fixed;z-index:61;inset:0;background:rgba(8,12,18,.47);display:flex;align-items:center;justify-content:center;padding:22px}#libraryOverlay.hidden{display:none}.libraryPanel{width:min(480px,95vw);max-height:78dvh;overflow:auto;background:#fff;border-radius:22px;padding:21px;box-shadow:0 14px 50px #0003}.libraryHead{display:flex;justify-content:space-between;align-items:center;gap:10px}.libraryHead h2{margin:0;font-size:19px}.libraryHead button{border:0;background:#edf0f5;border-radius:10px;width:38px;height:38px}.libraryList{display:grid;gap:9px;margin-top:18px}.libraryEntry{width:100%;border-radius:12px;border:1px solid #dfe3ec;display:flex;align-items:center;gap:12px;padding:11px 12px;background:#fbfcfe}.libraryEntry .fileTitle{text-align:left;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#1f2838;font-size:14px}.libraryEntry .remove{border:0;background:#f3eeee;color:#a14444;width:32px;height:32px;border-radius:9px}.libraryFoot{color:#7b8492;font-size:12px;line-height:1.6;margin-top:15px}#help{position:fixed;z-index:62;inset:0;background:rgba(8,12,18,.35);display:grid;place-items:center;padding:20px}
+#help.hidden{display:none}
+.helpPanel{background:#fff;color:#1b202b;border-radius:20px;padding:25px;width:min(400px,90vw);box-shadow:0 14px 55px #0003}
+.helpPanel h2{margin:0 0 18px;font-size:20px}
+.helpPanel p{line-height:1.7;font-size:14px;color:#4e5664}
+.helpPanel button{border:0;background:#1c2230;color:#fff;border-radius:12px;width:100%;min-height:44px;margin-top:10px}
+@media(min-width:900px){#toolbar{top:calc(env(safe-area-inset-top,0px) + 14px)}}
+</style>
+</head>
+<body>
+<main id="scroller" aria-label="PDF 전체화면 문서"><div id="pages"></div></main>
+<div id="start">
+  <div class="welcome">
+    <div class="logo"><svg viewBox="0 0 48 60"><path d="M8 2h24l8 8v45a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3z"/><path d="M32 2v9h8"/><path d="M16 26h17M16 33h17M16 40h12"/></svg></div>
+    <h1>Paper.</h1>
+    <p>PDF만 남기고 모든 것을 숨깁니다.<br>두 번 탭하면 도구가 나타납니다.</p>
+    <button id="startOpen" class="primary">PDF 불러오기</button>
+    <button id="startLibrary" style="background:#fff;border:1px solid #d6dce7;padding:10px 17px;border-radius:12px;color:#4f586a;cursor:pointer">등록한 PDF 목록</button>
+    <div class="foot">PDF는 기기에서 처리하며 서버로 업로드하지 않습니다.<br>기본 동작: 세로 이동 · 두 손가락 확대/축소</div>
+    <button id="showHelpStart" style="border:0;background:none;color:#5e6575;text-decoration:underline;font-size:12px">iPad 전체화면 실행 방법</button>
+  </div>
+</div>
+<div id="toolbar" class="hidden" aria-label="숨길 수 있는 PDF 도구 막대">
+  <button id="newFile" aria-label="PDF 등록" title="PDF 등록"><svg viewBox="0 0 24 24"><path d="M4 5h6l2 2h8v12H4z"/><path d="M12 10v6M9 13h6"/></svg></button>
+  <button id="libraryBtn" aria-label="등록한 PDF 목록" title="PDF 목록"><svg viewBox="0 0 24 24"><path d="M4 5v14M9 5v14M14 5l6-2 4 15-6 2zM2 19h12"/></svg></button>
+  <button id="save" aria-label="원본 PDF 저장 또는 공유" title="PDF 저장"><svg viewBox="0 0 24 24"><path d="M12 3v13m-4-4 4 4 4-4M4 17v4h16v-4"/></svg></button>
+  <button id="minus" aria-label="축소" title="축소"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+  <div id="zoomLabel" aria-live="off">100%</div>
+  <button id="plus" aria-label="확대" title="확대"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+  <div id="fileLabel"><span>PDF</span><small>두 번 탭하면 숨김</small></div>
+  <button id="full" aria-label="전체화면 전환" title="전체화면"><svg viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
+  <button id="helpBtn" aria-label="사용 방법" title="도움말"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.5 2.5 0 0 1 4.6 1.1c0 1.5-2.3 1.8-2.3 3.7M12 17.5h.01"/></svg></button>
+  <button id="closeTools" aria-label="도구 숨기기" title="도구 숨기기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+</div>
+<div id="loading" class="hidden" aria-live="polite"></div>
+<div id="libraryOverlay" class="hidden"><div class="libraryPanel"><div class="libraryHead"><h2>등록한 PDF</h2><button id="libraryClose" aria-label="닫기">×</button></div><div id="libraryList" class="libraryList"></div><div class="libraryFoot">PDF는 이 iPad 브라우저 저장소에 보관됩니다. 저장 용량 제한·웹사이트 데이터 삭제 시 사라질 수 있습니다.</div></div></div>
+<div id="help" class="hidden"><div class="helpPanel"><h2>완전한 문서 화면</h2>
+  <p><b>두 번 탭:</b> 도구 막대 열기 또는 닫기<br><b>한 번 탭:</b> 아무 일도 일어나지 않음<br><b>위아래 쓸기:</b> 페이지 이동<br><b>두 손가락:</b> 확대·축소 (가로 이동 없음)</p>
+  <p><b>iPad Safari:</b> 이 웹페이지를 HTTPS에서 연 뒤 공유 → <b>홈 화면에 추가</b> → 홈 화면의 Paper 아이콘으로 실행하세요. 일반 Safari 탭에서는 iPadOS가 Safari 막대를 계속 표시할 수 있습니다.</p>
+  <p>PDF 저장 버튼은 iPad의 공유 시트 또는 다운로드를 사용합니다. 등록한 PDF는 브라우저 저장소에 보관됩니다. 개인 브라우징, 저장 용량 제한이나 데이터 삭제 시 없어질 수 있습니다.</p>
+  <button id="helpClose">확인</button>
+</div></div>
+<input id="fileInput" type="file" accept="application/pdf,.pdf" style="display:none">
+<script type="module" src="./app.js"></script>
+</body>
+</html>
